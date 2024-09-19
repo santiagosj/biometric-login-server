@@ -1,0 +1,32 @@
+import fastify from "fastify";
+import fastifyCors from "@fastify/cors";
+import dotenv from 'dotenv';
+import { registerRoutes } from "./routes/authRouter";
+
+
+dotenv.config({
+    path: `/apps/server/.env`
+});
+
+if (!process.env.JWT_SECRET || !process.env.FIREBASE_ADMIN_SDK) {
+    throw new Error("Missing necessary environment variables!");
+}
+
+const app = fastify();
+app.register(fastifyCors, { origin: true });
+
+// Registro de rutas
+registerRoutes(app);
+
+app.get('/', async (request, response) => {
+    return { message: 'Hola mundo' }
+});
+
+try {
+    const port = process.env.PORT || 3001;
+    app.listen({ port: Number(port), host: '0.0.0.0' });
+    console.log(`Server is running on port ${port}`);
+} catch (err) {
+    app.log.error(err);
+    process.exit(1);
+}
