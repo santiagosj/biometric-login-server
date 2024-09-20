@@ -12,7 +12,8 @@ if (!process.env.FIREBASE_ADMIN_SDK) {
 const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SDK);
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://login-biometrico-default-rtdb.firebaseio.com/'
 });
 
 export default admin;
