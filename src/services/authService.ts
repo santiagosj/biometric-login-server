@@ -34,7 +34,9 @@ export const authService = {
             });
             return { status: 200, message: "User Created", user: userRecord }
         } catch (err) {
-            return { status: 500, message: "Error al crear el usuario" }
+            const error = err as Error;
+            console.log(err)
+            return { status: 500, message: `${error.message} Error al crear el usuario` }
         }
     },
 
