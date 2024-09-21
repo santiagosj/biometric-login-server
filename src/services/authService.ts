@@ -29,8 +29,8 @@ export const authService = {
                 username,
                 passwordHash,
                 createdAt: new Date().toISOString(),
-                // publicKey: '',
-                // credentialId: ''
+                publicKey: '',
+                credentialId: ''
             });
             return { status: 200, message: "User Created", user: userRecord }
         } catch (err) {
