@@ -1,11 +1,11 @@
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import dotenv from 'dotenv';
-import { registerRoutes } from "./routes/authRouter";
+import { authRoutes } from "./routes/authRouter";
 
 
 dotenv.config({
-    path: `/apps/server/.env`
+    path: `/.env`
 });
 
 if (!process.env.JWT_SECRET || !process.env.FIREBASE_ADMIN_SDK) {
@@ -16,7 +16,7 @@ const app = fastify();
 app.register(fastifyCors, { origin: true });
 
 // Registro de rutas
-registerRoutes(app);
+authRoutes(app);
 
 app.get('/', async (request, response) => {
     return { message: 'Hola mundo' }
