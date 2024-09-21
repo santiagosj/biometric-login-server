@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { users } from '../models/userModel';
+//import { users } from '../models/userModel';
 import { generateJWT } from '../utils/jwtHelper';
 import { randomBytes } from 'crypto';
 import admin from '../config/firebase';
@@ -29,8 +29,8 @@ export const authService = {
                 username,
                 passwordHash,
                 createdAt: new Date().toISOString(),
-                publicKey: '',
-                credentialId: ''
+                // publicKey: '',
+                // credentialId: ''
             });
             return { status: 200, message: "User Created", user: userRecord }
         } catch (err) {
