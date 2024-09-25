@@ -2,12 +2,12 @@ import bcrypt from 'bcrypt';
 //import { users } from '../models/userModel';
 import { generateJWT } from '../utils/jwtHelper';
 import { randomBytes } from 'crypto';
-import admin from '../config/firebase';
+import client from '../config/redis';
 
 export const authService = {
     async registerUser(email: string, username?: string, password?: string) {
         try {
-            const existingUser = await admin.auth().getUserByEmail(email).catch(() => null);
+            const existingUser = await client.get(`user:${email}`)
             if (existingUser) {
                 throw new Error('Email already exists');
             }
@@ -15,24 +15,22 @@ export const authService = {
             const passwordHash = password ? await bcrypt.hash(password, 10) : undefined;
             const userId = randomBytes(16).toString('hex');
 
-            // crear el usuario en firebase
-            const userRecord = await admin.auth().createUser({
-                uid: userId,
-                email: email,
-                password: password,
-                displayName: username,
-            });
-
-            //guardar el hash de la contrasena y datos adicionales en firestore
-            await admin.firestore().collection('users').doc(userRecord.uid).set({
+            const userData = {
                 email,
-                username,
-                passwordHash,
+                username: username || '',  // Asegúrate de que nunca sea undefined
+                passwordHash: passwordHash || '',  // Asegúrate de que nunca sea undefined
                 createdAt: new Date().toISOString(),
                 publicKey: '',
                 credentialId: ''
-            });
-            return { status: 200, message: "User Created", user: userRecord }
+            };
+
+            // crear el usuario en firebase
+            await client.hSet(`user${userId}`, userData)
+
+            //guardar el hash de la contrasena y datos adicionales en firestore
+            await client.set(`user${email}`, userId)
+
+            return { status: 200, message: "User Created", user: { email, username, userId } }
         } catch (err) {
             const error = err as Error;
             console.log(err)
@@ -42,16 +40,12 @@ export const authService = {
 
     async completeRegistration(email: string, credentialId: string, publicKey: string,) {
         try {
-            const user = (await admin.auth().getUserByEmail(email));
-
+            const user = await client.get(`user:${email}`);
             if (!user) {
                 return { status: 400, message: 'User not found' };
             }
 
-            await admin.firestore().collection('users').doc(user.uid).update({
-                credentialId,
-                publicKey,
-            });
+            await client.hSet(`user:${user}`, { credentialId, publicKey });
 
             return { status: 200, message: "Registration Complete" }
 
@@ -62,14 +56,12 @@ export const authService = {
 
     async loginUser(email: string) {
         try {
-            const user = (await admin.auth().getUserByEmail(email));
+            const user = await client.get(`user:${email}`)
 
             if (!user) {
                 return { status: 404, message: 'User not found' };
             }
-
-            const userDoc = await admin.firestore().collection('users').doc(user.uid).get();
-            const userData = userDoc.data();
+            const userData = await client.hGetAll(`user:${user}`)
 
             if (!userData || !userData.publicKey) {
                 return { status: 404, message: 'User not found' };
@@ -87,20 +79,19 @@ export const authService = {
 
     async completeLogin(email: string, credentialId: string) {
         try {
-            const user = await admin.auth().getUserByEmail(email);
+            const user = await client.get(`user:${email}`)
 
-            if (!user || !user.email) {
+            if (!user) {
                 return { status: 404, message: 'User not found' };
             }
 
-            const userDoc = await admin.firestore().collection('users').doc(user.uid).get();
-            const userData = userDoc.data();
+            const userData = await client.hGetAll(`user:${user}`)
 
             if (userData?.credentialId !== credentialId) {
                 return { status: 400, message: 'Credential ID does not match' };
             }
 
-            const token = generateJWT({ id: user.uid, email: user.email });
+            const token = generateJWT({ id: user, email: userData.email });
             return { status: 200, message: "Login successfull", token }
 
         } catch (err) {
