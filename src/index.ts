@@ -3,12 +3,11 @@ import fastifyCors from "@fastify/cors";
 import dotenv from 'dotenv';
 import { authRoutes } from "./routes/authRouter";
 
-
 dotenv.config({
-    path: `/.env`
+    path: `${__dirname}/../.env`
 });
 
-if (!process.env.JWT_SECRET || !process.env.FIREBASE_ADMIN_SDK) {
+if (!process.env.JWT_SECRET) {
     throw new Error("Missing necessary environment variables!");
 }
 
