@@ -11,6 +11,12 @@ client.on('error', (err) => {
     console.error('Error connecting to Redis:', err);
 });
 
-await client.connect()
+client.on('connect', () => {
+    console.log('Connected to Redis');
+});
+
+(async () => {
+    await client.connect()
+})();
 
 export default client;
